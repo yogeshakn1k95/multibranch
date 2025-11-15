@@ -1,8 +1,6 @@
 pipeline {
     agent any
-
-    stages {
-
+     stages {
         stage("Checkout") {
             steps {
                 echo "Running on branch: ${env.BRANCH_NAME}"
@@ -10,55 +8,44 @@ pipeline {
             }
         }
 
-        stage("Unit Tests") {
+        stage('Unit Tests') {
             steps {
-                echo "Running tests on ${env.BRANCH_NAME}"
+                echo "Running unit tests in ${env.BRANCH_NAME} branch"
                 sh 'mvn clean test'
             }
         }
 
-        stage("Code Scan") {
-            when {
-                branch 'dev'
-            }
-            steps {
-                echo "Running static scan on DEV branch"
-                sh 'echo Running Trivy or SonarQube scan here...'
-            }
-        }
-
-        stage("Build") {
+        stage('Build & Archive') {
             when {
                 branch 'main'
             }
             steps {
-                echo "Building application for MAIN branch"
+                echo "Building in main branch"
                 sh 'mvn clean package'
+                // archiveArtifacts artifacts: '***/target/*.jar', fingerprint: true
             }
         }
 
-        stage("Deploy") {
+        stage('Deploy') {
             when {
                 branch 'main'
             }
             steps {
-                echo "Deploying application from MAIN branch"
-
+                echo "Deploying app from main branch"
                 dir('target') {
                     sh '''
-                        # Stop old app if running
                         if pgrep -f "java -jar java-sample-21-1.0.0.jar" > /dev/null; then
                             pkill -f "java -jar java-sample-21-1.0.0.jar"
-                            echo "Old app stopped."
+                            echo "App was running and has been killed."
                         else
-                            echo "No existing app running."
+                            echo "App is not running."
                         fi
 
-                        # Start new app
                         JENKINS_NODE_COOKIE=dontkillMe nohup java -jar java-sample-21-1.0.0.jar > app.log 2>&1 &
                     '''
                 }
             }
         }
+
     }
 }
