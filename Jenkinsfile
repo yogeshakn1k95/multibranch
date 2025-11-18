@@ -1,3 +1,56 @@
+// pipeline {
+//     agent any
+//      stages {
+//         stage("Checkout") {
+//             steps {
+//                 echo "Running on branch: ${env.BRANCH_NAME}"
+//                 checkout scm
+//             }
+//         }
+
+//         stage('Unit Tests') {
+//             steps {
+//                 echo "Running unit tests in ${env.BRANCH_NAME} branch"
+//                 sh 'mvn clean test'
+//             }
+//         }
+
+//         stage('Build & Archive') {
+//             when {
+//                 branch 'main'
+//             }
+//             steps {
+//                 echo "Building in main branch"
+//                 sh 'mvn clean package'
+//                 // archiveArtifacts artifacts: '***/target/*.jar', fingerprint: true
+//             }
+//         }
+
+//         stage('Deploy') {
+//             when {
+//                 branch 'main'
+//             }
+//             steps {
+//                 echo "Deploying app from main branch"
+//                 dir('target') {
+//                     sh '''
+//                         if pgrep -f "java -jar java-sample-21-1.0.0.jar" > /dev/null; then
+//                             pkill -f "java -jar java-sample-21-1.0.0.jar"
+//                             echo "App was running and has been killed."
+//                         else
+//                             echo "App is not running."
+//                         fi
+
+//                         JENKINS_NODE_COOKIE=dontkillMe nohup java -jar java-sample-21-1.0.0.jar > app.log 2>&1 &
+//                     '''
+//                 }
+//             }
+//         }
+
+//     }
+// }
+
+
 pipeline {
     agent any
      stages {
@@ -9,6 +62,11 @@ pipeline {
         }
 
         stage('Unit Tests') {
+            when {
+                not {
+                    branch 'main'   // ❌ Skip tests on main branch
+                }
+            }
             steps {
                 echo "Running unit tests in ${env.BRANCH_NAME} branch"
                 sh 'mvn clean test'
@@ -22,7 +80,6 @@ pipeline {
             steps {
                 echo "Building in main branch"
                 sh 'mvn clean package'
-                // archiveArtifacts artifacts: '***/target/*.jar', fingerprint: true
             }
         }
 
